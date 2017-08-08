@@ -10,7 +10,8 @@ import UIKit
 
 @IBDesignable
 open class TagView: UIButton {
-
+    fileprivate var customView: UIView?
+    
     @IBInspectable open var cornerRadius: CGFloat = 0 {
         didSet {
             layer.cornerRadius = cornerRadius
@@ -162,8 +163,27 @@ open class TagView: UIButton {
         setupView()
     }
     
+    public init(with view: UIView) {
+        super.init(frame: CGRect.zero)
+        
+        self.customView = view
+        
+        setTitle(nil, for: UIControlState())
+        view.isUserInteractionEnabled = false
+        
+        setupView()
+    }
+    
     private func setupView() {
         frame.size = intrinsicContentSize
+        
+        if let containter = self.customView {
+            addSubview(containter)
+            var frame = containter.frame
+            frame.origin = CGPoint()
+            containter.frame = frame
+        }
+        
         addSubview(removeButton)
         removeButton.tagView = self
         
@@ -178,6 +198,10 @@ open class TagView: UIButton {
     // MARK: - layout
 
     override open var intrinsicContentSize: CGSize {
+        if let containter = self.customView {
+            return containter.frame.size
+        }
+        
         var size = titleLabel?.text?.size(attributes: [NSFontAttributeName: textFont]) ?? CGSize.zero
         size.height = textFont.pointSize + paddingY * 2
         size.width += paddingX * 2

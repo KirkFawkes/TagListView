@@ -36,6 +36,13 @@ class ViewController: UIViewController, TagListViewDelegate {
 
         tagListView.insertTag("This should be the third tag", at: 2)
         
+        biggerTagListView.addTag(view: {
+            let view = UIView()
+            view.frame = CGRect(x: 10, y: 0, width: 100, height: 70)
+            view.backgroundColor = .green
+            return view
+        }())
+        
         biggerTagListView.delegate = self
         biggerTagListView.textFont = UIFont.systemFont(ofSize: 15)
         biggerTagListView.shadowRadius = 2

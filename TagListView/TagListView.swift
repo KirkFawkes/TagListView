@@ -194,7 +194,7 @@ open class TagListView: UIView {
     open private(set) var tagViews: [TagView] = []
     private(set) var tagBackgroundViews: [UIView] = []
     private(set) var rowViews: [UIView] = []
-    private(set) var tagViewHeight: CGFloat = 0
+    private(set) var totalHeight: CGFloat = 0
     private(set) var rows = 0 {
         didSet {
             invalidateIntrinsicContentSize()
@@ -224,20 +224,27 @@ open class TagListView: UIView {
         }
         rowViews.removeAll(keepingCapacity: true)
         
+        var rowHeight: CGFloat = 0
+        self.totalHeight = 0
+        
         var currentRow = 0
         var currentRowView: UIView!
         var currentRowTagCount = 0
         var currentRowWidth: CGFloat = 0
         for (index, tagView) in tagViews.enumerated() {
             tagView.frame.size = tagView.intrinsicContentSize
-            tagViewHeight = tagView.frame.height
+            rowHeight = max(rowHeight, tagView.frame.height)
             
             if currentRowTagCount == 0 || currentRowWidth + tagView.frame.width > frame.width {
+                rowHeight += marginY
+                
                 currentRow += 1
                 currentRowWidth = 0
                 currentRowTagCount = 0
                 currentRowView = UIView()
-                currentRowView.frame.origin.y = CGFloat(currentRow - 1) * (tagViewHeight + marginY)
+                currentRowView.frame.origin.y = self.totalHeight
+                self.totalHeight += rowHeight
+                rowHeight = 0
                 
                 rowViews.append(currentRowView)
                 addSubview(currentRowView)
@@ -266,7 +273,7 @@ open class TagListView: UIView {
                 currentRowView.frame.origin.x = frame.width - (currentRowWidth - marginX)
             }
             currentRowView.frame.size.width = currentRowWidth
-            currentRowView.frame.size.height = max(tagViewHeight, currentRowView.frame.height)
+            currentRowView.frame.size.height = max(totalHeight, currentRowView.frame.height)
         }
         rows = currentRow
         
@@ -276,16 +283,14 @@ open class TagListView: UIView {
     // MARK: - Manage tags
     
     override open var intrinsicContentSize: CGSize {
-        var height = CGFloat(rows) * (tagViewHeight + marginY)
+        var height = totalHeight //CGFloat(rows) * (tagViewHeight + marginY)
         if rows > 0 {
             height -= marginY
         }
         return CGSize(width: frame.width, height: height)
     }
     
-    private func createNewTagView(_ title: String) -> TagView {
-        let tagView = TagView(title: title)
-        
+    private func prepeare(tagView: TagView) {
         tagView.textColor = textColor
         tagView.selectedTextColor = selectedTextColor
         tagView.tagBackgroundColor = tagBackgroundColor
@@ -311,20 +316,44 @@ open class TagListView: UIView {
                 tag.isSelected = (tag == this)
             }
         }
-        
+    }
+    
+    private func createNewTagView(containter: UIView) -> TagView {
+        let tagView = TagView(with: containter)
+        self.prepeare(tagView: tagView)
+        return tagView
+    }
+    
+    private func createNewTagView(title: String) -> TagView {
+        let tagView = TagView(title: title)
+        self.prepeare(tagView: tagView)
         return tagView
     }
 
     @discardableResult
     open func addTag(_ title: String) -> TagView {
-        return addTagView(createNewTagView(title))
+        return addTagView(createNewTagView(title: title))
+    }
+    
+    @discardableResult
+    open func addTag(view: UIView) -> TagView {
+        return addTagView(createNewTagView(containter: view))
     }
     
     @discardableResult
     open func addTags(_ titles: [String]) -> [TagView] {
         var tagViews: [TagView] = []
         for title in titles {
-            tagViews.append(createNewTagView(title))
+            tagViews.append(createNewTagView(title: title))
+        }
+        return addTagViews(tagViews)
+    }
+    
+    @discardableResult
+    open func addTags(views: [UIView]) -> [TagView] {
+        var tagViews: [TagView] = []
+        for view in views {
+            tagViews.append(createNewTagView(containter: view))
         }
         return addTagViews(tagViews)
     }
@@ -341,7 +370,7 @@ open class TagListView: UIView {
 
     @discardableResult
     open func insertTag(_ title: String, at index: Int) -> TagView {
-        return insertTagView(createNewTagView(title), at: index)
+        return insertTagView(createNewTagView(title: title), at: index)
     }
     
     @discardableResult
